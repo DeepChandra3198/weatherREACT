@@ -5,17 +5,28 @@ function App() {
   const [city, setCity] = useState('');
   const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const fetchWeather = async () => {
     setLoading(true);
+    setError(null);
     const apiKey = 'c44112c3aa67d9b3b3808ae183a04e53';
-    const response = await fetch(
-      `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`
-    );
-    const data = await response.json();
-    setWeather(data);
-    setCity(''); // Clear the input box after fetching data
-    setLoading(false);
+    try {
+      const response = await fetch(
+        `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`
+      );
+      if (!response.ok) {
+        throw new Error('City not found');
+      }
+      const data = await response.json();
+      setWeather(data);
+    } catch (error) {
+      setError(error.message);
+      setWeather(null);
+    } finally {
+      setLoading(false);
+      setCity(''); // Clear the input box after fetching data
+    }
   };
 
   const handleInputChange = (event) => {
@@ -43,35 +54,32 @@ function App() {
           </form>
         </div>
         {loading && <div className="loading">Loading...</div>}
-        {weather && !loading && <div className="weather-location">{weather.name}</div>}
-        <div className="containerTop">
-          {weather && !loading && (
-            <div className="weather-info">
-              <h2>Temperature</h2>
-              <p>{weather.main.temp}°C</p>
+        {error && <div className="error">{error}</div>}
+        {weather && !loading && !error && (
+          <>
+            <div className="weather-location">{weather.name}</div>
+            <div className="containerTop">
+              <div className="weather-info">
+                <h2>Temperature</h2>
+                <p>{weather.main?.temp}°C</p>
+              </div>
+              <div className="weather-info1">
+                <h2>Weather</h2>
+                <p>{weather.weather[0]?.description}</p>
+              </div>
             </div>
-          )}
-          {weather && !loading && (
-            <div className="weather-info1">
-              <h2>Weather</h2>
-              <p>{weather.weather[0].description}</p>
+            <div className="containerBottom">
+              <div className="weather-info2">
+                <h2>Humidity</h2>
+                <p>{weather.main?.humidity}%</p>
+              </div>
+              <div className="weather-info3">
+                <h2>Wind Speed</h2>
+                <p>{weather.wind?.speed} m/s</p>
+              </div>
             </div>
-          )}
-        </div>
-        <div className="containerBottom">
-          {weather && !loading && (
-            <div className="weather-info2">
-              <h2>Humidity</h2>
-              <p>{weather.main.humidity}%</p>
-            </div>
-          )}
-          {weather && !loading && (
-            <div className="weather-info3">
-              <h2>Wind Speed</h2>
-              <p>{weather.wind.speed} m/s}</p>
-            </div>
-          )}
-        </div>
+          </>
+        )}
       </section>
     </>
   );
